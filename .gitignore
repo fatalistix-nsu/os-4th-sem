@@ -12,3 +12,5 @@ cmake-build-debug
 .vscode
 
 Lab3/1/*/
+
+.gitignore
