@@ -13,4 +13,4 @@ cmake-build-debug
 
 Lab3/1/*/
 
-.gitignore
+.DS_Store
