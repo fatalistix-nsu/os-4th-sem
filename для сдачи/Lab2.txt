@@ -1,0 +1,252 @@
+strace utility
+
+
+In the simplest case strace runs the specified command until it exits.  It intercepts and records the system  calls  which  are
+       called  by  a process and the signals which are received by a process.  The name of each system call, its arguments and its re‐
+       turn value are printed on standard error or to the file specified with the -o option.
+
+       strace is a useful diagnostic, instructional, and debugging tool.  System administrators, diagnosticians  and  trouble-shooters
+       will find it invaluable for solving problems with programs for which the source is not readily available since they do not need
+       to be recompiled in order to trace them.  Students, hackers and the overly-curious will find that a great deal can  be  learned
+       about  a  system and its system calls by tracing even ordinary programs.  And programmers will find that since system calls and
+       signals are events that happen at the user/kernel interface, a close examination of this boundary is very useful for bug isola‐
+       tion, sanity checking and attempting to capture race conditions.
+
+
+
+execve:
+
+The `execve` syscall is a system call in Unix-like operating systems that is used to execute a new process. It takes three arguments: the first argument is the path to the executable file, the second argument is an array of strings that represent the command line arguments to the new process, and the third argument is an array of strings that represent the environment variables for the new process.
+
+When `execve` is called, the current process is replaced with the new process specified by the executable file. The new process inherits the file descriptors and signal mask of the current process, but all other resources (such as memory and resource limits) are reset.
+
+`execve` is a low-level system call and is typically used by higher-level functions such as `system`, `popen`, and `exec`. It is a powerful and versatile syscall that allows programs to launch other programs with customized arguments and environments.
+
+pathname must be either a binary executable, or a script starting with a line of the form:
+
+#!interpreter [optional-arg]
+
+For details of the latter case, see "Interpreter scripts" below.
+
+argv  is  an array of pointers to strings passed to the new program as its command-line arguments.  By convention, the first of
+these strings (i.e., argv[0]) should contain the filename associated with the file being executed.  The argv array must be ter‐
+minated by a NULL pointer.  (Thus, in the new program, argv[argc] will be NULL.)
+
+envp  is  an array of pointers to strings, conventionally of the form key=value, which are passed as the environment of the new
+program.  The envp array must be terminated by a NULL pointer.
+
+
+brk(NULL)
+
+The `brk(NULL)` syscall is a system call in Unix-like operating systems that is used to retrieve the current program break, which is the end of the process's data segment. 
+
+When the `brk(NULL)` syscall is called, it returns the current program break, which allows programs to allocate memory dynamically using the `brk` and `sbrk` syscalls. If the argument passed to `brk` is greater than the current program break, then the program break is extended to allocate the additional memory requested. If the argument is less than or equal to the current program break, then the program break is left unchanged.
+
+In summary, `brk(NULL)` is used to retrieve the current program break, which can be used by the `brk` and `sbrk` syscalls to allocate memory dynamically.
+
+The `brk(NULL)` syscall is used to retrieve the current program break, which is the end of the process's data segment. In comparison, other `brk` calls are used to allocate additional memory by extending the program break. 
+
+When `brk` is called with a non-NULL argument, the program break is increased to allocate the additional memory requested. If `brk` is called with a NULL argument, it only retrieves the current program break and does not allocate any new memory.
+
+Thus, the main difference between `brk(NULL)` and other `brk` calls is that `brk(NULL)` only retrieves the current program break, while other `brk` calls are used to increase the program break and allocate additional memory.
+
+arch_prctl
+
+The arch_prctl syscall is a system call that allows a process to control and modify the behavior of its architecture. This syscall is specific to Linux-based operating systems and is used to set or get architecture-specific process state information. 
+
+The arch_prctl syscall supports a set of commands that are specific to each architecture. These commands can be used to set or retrieve information related to various aspects of process state, including thread debugging and signal handling. 
+
+In general, the purpose of the arch_prctl syscall is to allow a process to modify its behavior based on the requirements of its architecture. This can be useful for optimizing performance, enabling features specific to a particular architecture, or supporting debugging and profiling tools for the process.
+
+-arch_prctl()  sets  architecture-specific  process or thread state.  code selects a subfunction and passes argument addr to it;
+-addr is interpreted as either an unsigned long for the "set" operations, or as an unsigned long *, for the "get" operations.
+
+mmap
+
+mmap()  creates a new mapping in the virtual address space of the calling process.  The starting address for the new mapping is
+       specified in addr.  The length argument specifies the length of the mapping (which must be greater than 0).
+
+       If addr is NULL, then the kernel chooses the (page-aligned) address at which to create the mapping; this is the  most  portable
+       method of creating a new mapping.  If addr is not NULL, then the kernel takes it as a hint about where to place the mapping; on
+       Linux,  the  kernel  will  pick  a  nearby  page  boundary  (but  always  above  or   equal   to   the   value   specified   by
+       /proc/sys/vm/mmap_min_addr) and attempt to create the mapping there.  If another mapping already exists there, the kernel picks
+       a new address that may or may not depend on the hint.  The address of the new mapping is returned as the result of the call.
+
+       The contents of a file mapping (as opposed to an anonymous mapping; see MAP_ANONYMOUS  below),  are  initialized  using  length
+       bytes starting at offset offset in the file (or other object) referred to by the file descriptor fd.  offset must be a multiple
+       of the page size as returned by sysconf(_SC_PAGE_SIZE).
+
+       After the mmap() call has returned, the file descriptor, fd, can be closed immediately without invalidating the mapping.
+
+       The prot argument describes the desired memory protection of the mapping (and must not conflict  with  the  open  mode  of  the
+       file).  It is either PROT_NONE or the bitwise OR of one or more of the following flags:
+
+       PROT_EXEC  Pages may be executed.
+
+       PROT_READ  Pages may be read.
+
+       PROT_WRITE Pages may be written.
+
+       PROT_NONE  Pages may not be accessed.
+
+   The flags argument
+       The  flags  argument  determines  whether  updates  to  the mapping are visible to other processes mapping the same region, and
+       whether updates are carried through to the underlying file.  This behavior is determined by including exactly one of  the  fol‐
+       lowing values in flags:
+
+       MAP_SHARED
+              Share  this mapping.  Updates to the mapping are visible to other processes mapping the same region, and (in the case of
+              file-backed mappings) are carried through to the underlying file.   (To  precisely  control  when  updates  are  carried
+              through to the underlying file requires the use of msync(2).)
+
+       MAP_SHARED_VALIDATE (since Linux 4.15)
+              This  flag  provides  the same behavior as MAP_SHARED except that MAP_SHARED mappings ignore unknown flags in flags.  By
+              contrast, when creating a mapping using MAP_SHARED_VALIDATE, the kernel verifies all passed flags are  known  and  fails
+              the mapping with the error EOPNOTSUPP for unknown flags.  This mapping type is also required to be able to use some map‐
+              ping flags (e.g., MAP_SYNC).
+
+       MAP_PRIVATE
+              Create a private copy-on-write mapping.  Updates to the mapping are not visible to  other  processes  mapping  the  same
+              file,  and are not carried through to the underlying file.  It is unspecified whether changes made to the file after the
+              mmap() call are visible in the mapped region.
+
+       Both MAP_SHARED and MAP_PRIVATE are described in POSIX.1-2001 and POSIX.1-2008.  MAP_SHARED_VALIDATE is a Linux extension.
+       
+       
+       
+The mmap() syscall in Linux allows a process to map a portion of its memory onto a file. This operation establishes a mapping between the specified file and a range of process memory addresses, either fully backed or zero-filled. In other words, mmap() provides a mechanism for allowing processes to access files as if they were arrays in memory. The programmer can use the memory address returned by mmap() as a pointer to the file data, which can be read from or written to as if it was regular memory. This is useful for a variety of use cases, such as loading large files into memory, implementing memory-mapped databases, and managing shared memory among processes.
+
+
+
+access
+
+access() checks whether the calling process can access the file pathname.  If pathname is a symbolic link, it is dereferenced.
+
+       The  mode  specifies the accessibility check(s) to be performed, and is either the value F_OK, or a mask consisting of the bit‐
+       wise OR of one or more of R_OK, W_OK, and X_OK.  F_OK tests for the existence of the file.  R_OK, W_OK, and X_OK  test  whether
+       the file exists and grants read, write, and execute permissions, respectively.
+
+       The check is done using the calling process's real UID and GID, rather than the effective IDs as is done when actually attempt‐
+       ing an operation (e.g., open(2)) on the file.  Similarly, for the root user, the check uses the set of  permitted  capabilities
+       rather than the set of effective capabilities; and for non-root users, the check uses an empty set of capabilities.
+
+       This  allows  set-user-ID programs and capability-endowed programs to easily determine the invoking user's authority.  In other
+       words, access() does not answer the "can I read/write/execute this file?" question.  It answers a slightly different  question:
+       "(assuming  I'm  a  setuid binary) can the user who invoked me read/write/execute this file?", which gives set-user-ID programs
+       the possibility to prevent malicious users from causing them to read files which users shouldn't be able to read.
+
+       If the calling process is privileged (i.e., its real UID is zero), then an X_OK check is successful for a regular file if  exe‐
+       cute permission is enabled for any of the file owner, group, or other.
+       
+       
+       access() system call in operating systems is used to check user permissions for a specific file or path. It can determine whether the user has read, write, or execute permissions and return the result to the calling function. The access() system call is useful for checking user permissions before a file operation is performed, such as opening or deleting a file.
+       
+
+
+openat
+
+The  open()  system  call  opens  the  file specified by pathname.  If the specified file does not exist, it may optionally (if
+       O_CREAT is specified in flags) be created by open().
+
+       The return value of open() is a file descriptor, a small, nonnegative integer that is used in subsequent system calls (read(2),
+       write(2),  lseek(2),  fcntl(2), etc.) to refer to the open file.  The file descriptor returned by a successful call will be the
+       lowest-numbered file descriptor not currently open for the process.
+
+       By default, the new file descriptor is set to remain open across an execve(2) (i.e., the FD_CLOEXEC file  descriptor  flag  de‐
+       scribed  in fcntl(2) is initially disabled); the O_CLOEXEC flag, described below, can be used to change this default.  The file
+       offset is set to the beginning of the file (see lseek(2)).
+
+       A call to open() creates a new open file description, an entry in the system-wide table of open files.  The open file  descrip‐
+       tion  records the file offset and the file status flags (see below).  A file descriptor is a reference to an open file descrip‐
+       tion; this reference is unaffected if pathname is subsequently removed or modified to refer to a different file.   For  further
+       details on open file descriptions, see NOTES.
+
+       The  argument  flags  must include one of the following access modes: O_RDONLY, O_WRONLY, or O_RDWR.  These request opening the
+       file read-only, write-only, or read/write, respectively.
+
+       In addition, zero or more file creation flags and file status flags can be bitwise-or'd in flags.  The file creation flags  are
+       O_CLOEXEC,  O_CREAT,  O_DIRECTORY,  O_EXCL, O_NOCTTY, O_NOFOLLOW, O_TMPFILE, and O_TRUNC.  The file status flags are all of the
+       remaining flags listed below.  The distinction between these two groups of flags is that the file creation flags affect the se‐
+       mantics  of the open operation itself, while the file status flags affect the semantics of subsequent I/O operations.  The file
+       status flags can be retrieved and (in some cases) modified; see fcntl(2) for details.
+
+
+
+ openat()
+       The openat() system call operates in exactly the same way as open(), except for the differences described here.
+
+       If  the  pathname  given  in pathname is relative, then it is interpreted relative to the directory referred to by the file de‐
+       scriptor dirfd (rather than relative to the current working directory of the calling process, as is done by open() for a  rela‐
+       tive pathname).
+
+       If  pathname  is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted relative to the current working
+       directory of the calling process (like open()).
+
+       If pathname is absolute, then dirfd is ignored.
+
+   openat2(2)
+       The openat2(2) system call is an extension of openat(), and provides a superset of the features of openat().  It is  documented
+       separately, in openat2(2).
+       
+       
+       
+fstatat
+
+
+These  functions return information about a file, in the buffer pointed to by statbuf.  No permissions are required on the file
+       itself, but—in the case of stat(), fstatat(), and lstat()—execute (search) permission is required on all of the directories  in
+       pathname that lead to the file.
+
+       stat()  and  fstatat()  retrieve information about the file pointed to by pathname; the differences for fstatat() are described
+       below.
+
+       lstat() is identical to stat(), except that if pathname is a symbolic link, then it returns information about the link  itself,
+       not the file that the link refers to.
+
+       fstat()  is  identical  to stat(), except that the file about which information is to be retrieved is specified by the file de‐
+       scriptor fd.
+       
+       
+       fstatat()
+       The fstatat() system call is a more general interface for accessing file information which can still provide exactly the behav‐
+       ior of each of stat(), lstat(), and fstat().
+
+       If  the  pathname  given  in pathname is relative, then it is interpreted relative to the directory referred to by the file de‐
+       scriptor dirfd (rather than relative to the current working directory of the calling process, as is done by stat() and  lstat()
+       for a relative pathname).
+
+       If  pathname  is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted relative to the current working
+       directory of the calling process (like stat() and lstat()).
+
+       If pathname is absolute, then dirfd is ignored.
+       
+       
+       
+	The main difference between newfstatat and fstatat syscalls lies in their behavior when encountering a symbolic link. 
+
+The newfstatat system call (introduced in Linux 5.11) is used to obtain metadata for a file/directory identified by a file descriptor (fd), such as its permissions, owner, size, etc. It allows for the passing of a flag (AT_SYMLINK_NOFOLLOW) to disable following symbolic links and instead return the metadata of the link itself. 
+
+On the other hand, the fstatat system call (available in earlier versions of Linux) also obtains metadata for a file identified by a file descriptor (fd) but always follows any encountered symbolic links and returns the metadata of the final target of the link. It also provides an additional flag (AT_EMPTY_PATH) to handle empty pathnames. 
+
+In summary, the newfstatat system call provides more control over how symbolic links are handled when obtaining file metadata.
+
+Файловый дескриптор - это целочисленное значение, которое является ссылкой или указателем на открытый файл в операционной системе. Дескриптор файла обычно содержит информацию о местоположении файла на диске, его размере и текущей позиции чтения / записи в файле. Он используется для доступа к файлу, а также для выполнения операций ввода / вывода в файл, таких как чтение, запись, перемещение курсора и закрытие файла. Каждый процесс в операционной системе имеет свой собственный набор файловых дескрипторов, которые позволяют ему взаимодействовать с файлами и устройствами в системе.
+
+
+close
+
+The close() system call is used to close a file descriptor or a socket descriptor. When a file or socket is opened, the operating system creates a data structure called a file descriptor (or socket descriptor) to keep track of the file/socket. The file descriptor contains various information about the file/socket, such as the file/socket position, access mode, and buffer size.
+
+When the close() system call is invoked, the operating system removes the file descriptor from the process's endpoint table and releases any system resources associated with the file/socket. This ensures that other processes and applications can access the file/socket and its resources.
+
+In summary, the close() system call is used to remove a file or socket descriptor and to release any system resources associated with the file or socket.
+
+
+
+ close()  closes  a file descriptor, so that it no longer refers to any file and may be reused.  Any record locks (see fcntl(2))
+       held on the file it was associated with, and owned by the process, are removed (regardless of the file descriptor that was used
+       to obtain the lock).
+
+       If  fd  is  the  last file descriptor referring to the underlying open file description (see open(2)), the resources associated
+       with the open file description are freed; if the file descriptor was the last reference to a file which has been removed  using
+       unlink(2), the file is deleted.
